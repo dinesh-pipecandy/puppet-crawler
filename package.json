@@ -1,0 +1,13 @@
+{
+  "name": "puppet-crawler",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/dinesh-pipecandy/puppet-crawler.git",
+  "dependencies": {
+    "async": "^2.6.1",
+    "minimist": "^1.2.0",
+    "puppeteer": "^1.5.0"
+  },
+  "author": "Dinesh <dinesh@pipecandy.com>",
+  "license": "MIT"
+}
