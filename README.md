@@ -8,3 +8,5 @@
  * -o, --output - Output file
  * -f, --enableframes - Get all frames in page
  * -t, --tabs - Threshold for concurrent open tabs
+ * -l, --loadTime - DOM load time in milliseconds
+ 

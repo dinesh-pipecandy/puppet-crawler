@@ -8,11 +8,12 @@ const argv = require('minimist')(process.argv.slice(2), {
     i: 'input',
     o: 'output',
     f: 'enableFrames',
-    t: 'tabs'
+    t: 'tabs',
+    l: 'loadTime'
   }
 });
 
-const DOM_LOAD_DELAY = 4000
+const {loadTime: DOM_LOAD_DELAY = 4000} = argv
 
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -88,7 +89,7 @@ async function queue(pages, chunks, enableFrames, outStream) {
     tabs: tabsThreshold = 1,
   } = argv
 
-  const browser = await puppeteer.launch({headless: false})
+  const browser = await puppeteer.launch()
   const urls = fs.readFileSync(inputFile).toString().split('\n');
   let outStream
 
