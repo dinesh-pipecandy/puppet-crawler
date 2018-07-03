@@ -33,26 +33,32 @@ async function getFrames(frame, depth=0, frameList) {
 
 async function crawl(page, url, enableFrames) {
   if(!url) return
-  await page.goto(url, {
-    waitUntil: 'domcontentloaded',
-    timeout: 30000
-  })
-  await sleep(DOM_LOAD_DELAY)
-  contents = await page.content()
-  frameList = []
-  frameList.push({
-    depth: 0,
-    url,
-    content: contents
-  })
-  if(enableFrames) {
-    frames = await page.frames()
-    for (let frame of frames)
-      await getFrames(frame, 0, frameList)
+  let frameList = []
+  let error = ""
+  try {
+    await page.goto(url, {
+      waitUntil: 'domcontentloaded',
+      timeout: 30000
+    })
+    await sleep(DOM_LOAD_DELAY)
+    contents = await page.content()
+    frameList.push({
+      depth: 0,
+      url,
+      content: contents
+    })
+    if(enableFrames) {
+      frames = await page.frames()
+      for (let frame of frames)
+        await getFrames(frame, 0, frameList)
+    }
+  } catch (err) {
+    error = err.message
   }
   return {
     url,
-    contents: frameList
+    contents: frameList,
+    error
   }
 }
 
