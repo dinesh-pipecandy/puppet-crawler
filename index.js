@@ -31,14 +31,15 @@ async function getFrames(frame, depth=0, frameList) {
     if(child) await getFrames(child, depth+1, frameList);
 }
 
-async function crawl(page, url, enableFrames) {
+async function crawl(context, url, enableFrames) {
   if(!url) return
+  let page = await context.newPage()
   let frameList = []
   let error = ""
   try {
     await page.goto(url, {
-      waitUntil: 'domcontentloaded',
-      timeout: 30000
+      waitUntil: 'networkidle2',
+      timeout: 60000
     })
     await sleep(DOM_LOAD_DELAY)
     contents = await page.content()
@@ -53,6 +54,7 @@ async function crawl(page, url, enableFrames) {
         await getFrames(frame, 0, frameList)
     }
   } catch (err) {
+    console.log(err.message)
     error = err.message
   }
   return {
@@ -62,15 +64,16 @@ async function crawl(page, url, enableFrames) {
   }
 }
 
-async function queue(pages, chunks, enableFrames, outStream) {
+async function queue(browser, chunks, enableFrames, outStream) {
   return new Promise((resolve, reject) => {
     async.eachOf(chunks, async.asyncify(async (chunk, index) => {
-      const page = pages[index]
+      let context = await browser.createIncognitoBrowserContext();
       for (let url of chunk) {
         console.log('Processing ', url)
-        let data = await crawl(page, url, enableFrames)
+        let data = await crawl(context, url, enableFrames)
         if (data) outStream.write(JSON.stringify(data) + '\n\r')
       }
+      await context.close()
       return new Promise((resolve, reject) => resolve())
     }), (err, result) => {
       if(err) return reject(err)
@@ -95,24 +98,23 @@ async function queue(pages, chunks, enableFrames, outStream) {
     tabs: tabsThreshold = 1,
   } = argv
 
-  const browser = await puppeteer.launch()
+  const browser = await puppeteer.launch({headless: true})
   const urls = fs.readFileSync(inputFile).toString().split('\n');
   let outStream
 
   if(outputFile) outStream = fs.createWriteStream(outputFile, {flags:'a'})
   else outStream = process.stdout
-  let pages = []
-  for (let i = 0; i< tabsThreshold; i++) {
-    pages.push(await browser.newPage())
-  }
+
   const chunkSize = Math.ceil(urls.length/tabsThreshold)
   let chunks = []
   for (let i = 0, j = urls.length; i < j; i+=chunkSize) {
     chunks.push(urls.slice(i, i+chunkSize))
   }
-  await queue(pages, chunks, enableFrames, outStream)
+  await queue(browser, chunks, enableFrames, outStream)
+
   if(outStream.end) outStream.end()
   await browser.close()
+
   console.timeEnd('elapsed')
   console.log('Puppet process ended at', new Date().toLocaleString())
 })()
