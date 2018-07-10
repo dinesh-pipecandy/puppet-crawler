@@ -21,11 +21,12 @@ function sleep(ms) {
 
 async function getFrames(frame, depth=0, frameList) {
   if(!frame) return
-  contents = await frame.content()
+  content = await frame.content()
   frameList.push({
     depth,
-    url: frame.url(),
-    content: contents
+    frameUrl: frame.url(),
+    content,
+    tag: "FRAME"
   })
   for (let child of frame.childFrames())
     if(child) await getFrames(child, depth+1, frameList);
@@ -37,16 +38,24 @@ async function crawl(context, url, enableFrames) {
   let frameList = []
   let error = ""
   try {
-    await page.goto(url, {
+    const response = await page.goto(url, {
       waitUntil: 'networkidle2',
       timeout: 60000
     })
     await sleep(DOM_LOAD_DELAY)
-    contents = await page.content()
+    content = await page.content()
+    let chain = response.request().redirectChain()
+    chain = chain.map(res => res.url())
+    const title = await page.title()
+    const finalUrl = page.url()
     frameList.push({
       depth: 0,
-      url,
-      content: contents
+      title,
+      actualUrl: url,
+      finalUrl,
+      content,
+      redirectChain: chain,
+      tag: "HOME"
     })
     if(enableFrames) {
       frames = await page.frames()
