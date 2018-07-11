@@ -66,6 +66,7 @@ async function crawl(context, url, enableFrames) {
     console.log(err.message)
     error = err.message
   }
+  await page.close()
   return {
     url,
     contents: frameList,
